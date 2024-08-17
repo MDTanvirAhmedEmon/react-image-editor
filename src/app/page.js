@@ -8,6 +8,8 @@ import { LiaRedoAltSolid } from "react-icons/lia";
 import { ConfigProvider, Slider, Tooltip } from 'antd';
 import { useState } from "react";
 import Image from "next/image";
+import ReactCrop from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 
 const Home = () => {
 
@@ -56,6 +58,10 @@ const Home = () => {
         horizontal: 1,
     });
 
+    const [crop, setCrop] = useState('')
+    const [details, setDetails] = useState('')
+    console.log('details', details)
+
     const imageHandle = (e) => {
         if (e.target.files.length !== 0) {
             const reader = new FileReader();
@@ -77,6 +83,93 @@ const Home = () => {
         });
     };
 
+    const leftRotate = () => {
+        setImageState({
+            ...imageState,
+            rotate: imageState.rotate + 90
+        });
+    };
+
+    const rightRotate = () => {
+        setImageState({
+            ...imageState,
+            rotate: imageState.rotate - 90
+        });
+    };
+
+    const verticalFlip = () => {
+        setImageState({
+            ...imageState,
+            vertical: imageState.vertical === 1 ? -1 : 1
+        });
+    };
+
+    const horizontalFlip = () => {
+        setImageState({
+            ...imageState,
+            horizontal: imageState.horizontal === 1 ? -1 : 1
+        });
+    };
+
+    const imageCrop = () => {
+        const canvas = document.createElement('canvas')
+        const scaleX = details.naturalWidth / details.width
+        const scaleY = details.naturalHeight / details.height
+        canvas.width = crop.width
+        canvas.height = crop.height
+        const ctx = canvas.getContext('2d')
+
+        ctx.drawImage(
+            details,
+            crop.x * scaleX,
+            crop.y * scaleY,
+            crop.width * scaleX,
+            crop.height * scaleY,
+            0,
+            0,
+            crop.width,
+            crop.height
+        )
+        const base64Url = canvas.toDataURL('image/jpg')
+        setImageState({
+            ...imageState,
+            image: base64Url
+        })
+    };
+
+    const saveImage = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = details.naturalWidth
+        canvas.height = details.naturalHeight
+        const ctx = canvas.getContext('2d')
+
+        ctx.filter = `
+        brightness(${imageState.brightness}%) 
+        grayscale(${imageState.grayscale}%) 
+        sepia(${imageState.sepia}%) 
+        saturate(${imageState.saturate}%) 
+        contrast(${imageState.contrast}%) 
+        hue-rotate(${imageState.hueRotate}deg)
+        `
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate(imageState.rotate * Math.PI / 180)
+        ctx.scale(imageState.vertical, imageState.horizontal)
+
+        ctx.drawImage(
+            details,
+            -canvas.width / 2,
+            -canvas.height / 2,
+            canvas.width,
+            canvas.height
+        );
+
+        const link = document.createElement('a')
+        link.download = 'image_edit.jpg'
+        link.href = canvas.toDataURL()
+        link.click()
+
+    };
+
     return (
         <div className="container mx-auto">
             <div className="flex justify-between items-center h-[10vh]">
@@ -91,9 +184,14 @@ const Home = () => {
                             <BiRedo className="w-6 h-6" />
                         </button>
                     </Tooltip>
-                    <button className="text-white bg-[#3C3D37] py-2 px-4 rounded-sm shadow-md">
-                        Crop Image
-                    </button>
+                    {
+                        crop &&
+                        <button onClick={imageCrop} className="text-white bg-[#3C3D37] py-2 px-4 rounded-sm shadow-md">
+                            Crop Image
+                        </button>
+
+                    }
+
                     <label
                         htmlFor="choose"
                         className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md cursor-pointer"
@@ -107,7 +205,7 @@ const Home = () => {
                     <button className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md">
                         Reset
                     </button>
-                    <button className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                    <button onClick={saveImage} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
                         Save Image
                     </button>
                 </div>
@@ -116,25 +214,25 @@ const Home = () => {
             <div className="h-[80vh] flex">
                 <div className="w-[10%] h-full">
                     <div className="flex gap-4">
-                        <Tooltip title="Flip" placement="leftTop">
-                            <button className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                        <Tooltip title="Horizontal Flip" placement="leftTop">
+                            <button onClick={horizontalFlip} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
                                 <LuFlipHorizontal2 className="w-6 h-6" />
                             </button>
                         </Tooltip>
-                        <Tooltip title="Flip" placement="rightTop">
-                            <button className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                        <Tooltip title="Vertical Flip" placement="rightTop">
+                            <button onClick={verticalFlip} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
                                 <LuFlipVertical2 className="w-6 h-6" />
                             </button>
                         </Tooltip>
                     </div>
                     <div className="flex gap-4 mt-3">
-                        <Tooltip title="Rotate" placement="leftTop">
-                            <button className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                        <Tooltip title="Left Rotate" placement="leftTop">
+                            <button onClick={leftRotate} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
                                 <LiaUndoAltSolid className="w-6 h-6" />
                             </button>
                         </Tooltip>
-                        <Tooltip title="Rotate" placement="rightTop">
-                            <button className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                        <Tooltip title="Right Rotate" placement="rightTop">
+                            <button onClick={rightRotate} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
                                 <LiaRedoAltSolid className="w-6 h-6" />
                             </button>
                         </Tooltip>
@@ -153,11 +251,13 @@ const Home = () => {
                     </div>
                 </div>
 
-                <div className="w-[90%] bg-slate-100 flex items-center justify-center">
+                <div className="w-[90%] bg-slate-100 flex items-center justify-center overflow-hidden">
                     {imageState.image && (
-                        <Image
-                            style={{
-                                filter: `
+                        <ReactCrop crop={crop} onChange={c => setCrop(c)}>
+                            <Image
+                                onLoad={(e) => setDetails(e.currentTarget)}
+                                style={{
+                                    filter: `
                                     brightness(${imageState.brightness}%) 
                                     grayscale(${imageState.grayscale}%) 
                                     sepia(${imageState.sepia}%) 
@@ -165,17 +265,19 @@ const Home = () => {
                                     contrast(${imageState.contrast}%) 
                                     hue-rotate(${imageState.hueRotate}deg)
                                 `,
-                                transform: `
+                                    transform: `
                                     rotate(${imageState.rotate}deg) 
-                                    scale(${imageState.vertical}, ${imageState.horizontal})
+                                    scale(${imageState.horizontal}, ${imageState.vertical})
                                 `
-                            }}
-                            className="w-[1000px]"
-                            src={imageState.image}
-                            width={0}
-                            height={0}
-                            alt="img"
-                        />
+                                }}
+                                className="w-auto"
+                                src={imageState.image}
+                                width={0}
+                                height={0}
+                                alt="img"
+                            />
+                        </ReactCrop>
+
                     )}
                 </div>
             </div>
