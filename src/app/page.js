@@ -61,6 +61,7 @@ const Home = () => {
           rotate: 0,
           vertical: 1,
           horizontal: 1,
+          scale: 1,
         };
         setImageState(stateData);
         setOriginalImageState(stateData);
@@ -151,7 +152,7 @@ const Home = () => {
     storeData.insert(stateData);
     // Reset the crop state to hide the crop box
     setCrop(null);
-  });
+  }, [crop, details, imageState]);
 
   // Add useEffect to listen for Enter key
   useEffect(() => {
@@ -167,16 +168,24 @@ const Home = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [crop, imageState]); // Dependency array to re-apply effect when crop or imageState changes
+  }, [crop]);
+
+  // Handle zooming with Alt + Mouse scroll
   useEffect(() => {
     const handleWheel = (event) => {
       if (event.altKey) {
         event.preventDefault();
-        const newScale = imageState.scale + (event.deltaY < 0 ? 0.1 : -0.1);
-        setImageState((prevState) => ({
-          ...prevState,
-          scale: Math.min(Math.max(newScale, 0.1), 5), // Limit zoom between 0.1x and 5x
-        }));
+        const zoomDirection = event.deltaY < 0 ? 0.1 : -0.1; // Scroll up zooms in, scroll down zooms out
+        setImageState((prevState) => {
+          const newScale = Math.min(
+            Math.max(prevState.scale + zoomDirection, 0.1),
+            5
+          ); // Limit zoom between 0.1x and 5x
+          return {
+            ...prevState,
+            scale: newScale,
+          };
+        });
       }
     };
 
@@ -277,7 +286,6 @@ const Home = () => {
           </button>
         </div>
       </div>
-
       <div className="h-[80vh] flex">
         <div className="w-[10%] h-full">
           <div className="flex gap-4">
@@ -333,7 +341,6 @@ const Home = () => {
             ))}
           </div>
         </div>
-
         <div
           className="h-[80vh] w-full bg-slate-100 flex justify-center overflow-auto" // Enabled scrolling
           style={{ cursor: "grab" }}
@@ -374,7 +381,6 @@ const Home = () => {
           </div>
         </div>
       </div>
-
       <div className="w-full h-[10vh] flex items-center justify-center">
         <div className="w-[600px]">
           <ConfigProvider
