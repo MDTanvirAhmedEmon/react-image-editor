@@ -10,6 +10,7 @@ import { useState } from "react";
 import Image from "next/image";
 import ReactCrop from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
+import storeData from "@/LinkedList";
 
 const Home = () => {
 
@@ -71,6 +72,19 @@ const Home = () => {
                     ...imageState,
                     image: reader.result
                 });
+                const stateData = {
+                    image: reader.result,
+                    brightness: 100,
+                    grayscale: 0,
+                    sepia: 0,
+                    saturate: 100,
+                    contrast: 100,
+                    hueRotate: 0,
+                    rotate: 0,
+                    vertical: 1,
+                    horizontal: 1,
+                }
+                storeData.insert(stateData)
             };
             reader.readAsDataURL(e.target.files[0]);
         }
@@ -88,6 +102,9 @@ const Home = () => {
             ...imageState,
             rotate: imageState.rotate + 90
         });
+        const stateData = imageState
+        stateData.rotate = imageState.rotate -90
+        storeData.insert(stateData)
     };
 
     const rightRotate = () => {
@@ -95,6 +112,9 @@ const Home = () => {
             ...imageState,
             rotate: imageState.rotate - 90
         });
+        const stateData = imageState
+        stateData.rotate = imageState.rotate +90
+        storeData.insert(stateData)
     };
 
     const verticalFlip = () => {
@@ -102,6 +122,9 @@ const Home = () => {
             ...imageState,
             vertical: imageState.vertical === 1 ? -1 : 1
         });
+        const stateData = imageState
+        stateData.rotate = imageState.vertical === 1 ? -1 : 1
+        storeData.insert(stateData)
     };
 
     const horizontalFlip = () => {
@@ -109,6 +132,22 @@ const Home = () => {
             ...imageState,
             horizontal: imageState.horizontal === 1 ? -1 : 1
         });
+        const stateData = imageState
+        stateData.rotate = imageState.horizontal === 1 ? -1 : 1
+        storeData.insert(stateData)
+    };
+
+    const redo =() => {
+        const data = storeData.redoEdit()
+        if(data){
+            setImageState(data)
+        }
+    };
+    const undo =() => {
+        const data = storeData.undoEdit()
+        if(data){
+            setImageState(data)
+        }
     };
 
     const imageCrop = () => {
@@ -176,12 +215,12 @@ const Home = () => {
                 <div className="flex items-center gap-4">
                     <Tooltip title="Undo" placement="leftTop">
                         <button className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md">
-                            <BiUndo className="w-6 h-6" />
+                            <BiUndo onClick={undo} className="w-6 h-6" />
                         </button>
                     </Tooltip>
                     <Tooltip title="Redo" placement="bottomRight">
                         <button className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md">
-                            <BiRedo className="w-6 h-6" />
+                            <BiRedo onClick={redo} className="w-6 h-6" />
                         </button>
                     </Tooltip>
                     {
