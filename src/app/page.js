@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import storeData from "@/LinkedList";
+import { getLinkedListForImage } from "@/LinkedList"; // Updated import
 
 const Home = () => {
   const filtersItem = [
@@ -41,17 +41,26 @@ const Home = () => {
     scale: 1, // Added scale for zooming
   });
 
-  const [originalImageState, setOriginalImageState] = useState(null);
-  const [crop, setCrop] = useState("");
-  const [details, setDetails] = useState("");
+  const [images, setImages] = useState([]); // Store multiple images
+  const [currentIndex, setCurrentIndex] = useState(0); // Track the current image index
+  const [crop, setCrop] = useState(null); // Initialize the crop state
+  const [details, setDetails] = useState(null); // Initialize the details state
 
   const imageHandle = (e) => {
     if (e.target.files.length !== 0) {
-      const reader = new FileReader();
+      const files = Array.from(e.target.files); // Convert FileList to Array
+      const imagePromises = files.map((file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      });
 
-      reader.onload = () => {
+      Promise.all(imagePromises).then((imageDataArray) => {
+        setImages(imageDataArray);
         const stateData = {
-          image: reader.result,
+          image: imageDataArray[0], // Display the first image initially
           brightness: 100,
           grayscale: 0,
           sepia: 0,
@@ -64,10 +73,10 @@ const Home = () => {
           scale: 1,
         };
         setImageState(stateData);
-        setOriginalImageState(stateData);
-        storeData.insert(stateData);
-      };
-      reader.readAsDataURL(e.target.files[0]);
+        const linkedList = getLinkedListForImage(0);
+        linkedList.insert(stateData);
+        setCurrentIndex(0); // Reset to the first image
+      });
     }
   };
 
@@ -77,52 +86,72 @@ const Home = () => {
       [property.name]: value,
     };
     setImageState(newState);
-    storeData.insert(newState);
+    const linkedList = getLinkedListForImage(currentIndex);
+    linkedList.insert(newState);
   };
 
   const leftRotate = () => {
     const newRotate = imageState.rotate + 90;
     const stateData = { ...imageState, rotate: newRotate };
     setImageState(stateData);
-    storeData.insert(stateData);
+    const linkedList = getLinkedListForImage(currentIndex);
+    linkedList.insert(stateData);
   };
 
   const rightRotate = () => {
     const newRotate = imageState.rotate - 90;
     const stateData = { ...imageState, rotate: newRotate };
     setImageState(stateData);
-    storeData.insert(stateData);
+    const linkedList = getLinkedListForImage(currentIndex);
+    linkedList.insert(stateData);
   };
 
   const verticalFlip = () => {
     const newVertical = imageState.vertical === 1 ? -1 : 1;
     const stateData = { ...imageState, vertical: newVertical };
     setImageState(stateData);
-    storeData.insert(stateData);
+    const linkedList = getLinkedListForImage(currentIndex);
+    linkedList.insert(stateData);
   };
 
   const horizontalFlip = () => {
     const newHorizontal = imageState.horizontal === 1 ? -1 : 1;
     const stateData = { ...imageState, horizontal: newHorizontal };
     setImageState(stateData);
-    storeData.insert(stateData);
+    const linkedList = getLinkedListForImage(currentIndex);
+    linkedList.insert(stateData);
   };
 
   const redo = () => {
-    const data = storeData.redoEdit();
+    const linkedList = getLinkedListForImage(currentIndex);
+    const data = linkedList.redoEdit();
     if (data) setImageState(data);
   };
 
   const undo = () => {
-    const data = storeData.undoEdit();
+    const linkedList = getLinkedListForImage(currentIndex);
+    const data = linkedList.undoEdit();
     if (data) setImageState(data);
   };
 
   const resetImage = () => {
-    if (originalImageState) {
-      setImageState(originalImageState);
-      storeData.insert(originalImageState);
-    }
+    const linkedList = getLinkedListForImage(currentIndex);
+    linkedList.reset();
+    const stateData = {
+      image: images[currentIndex],
+      brightness: 100,
+      grayscale: 0,
+      sepia: 0,
+      saturate: 100,
+      contrast: 100,
+      hueRotate: 0,
+      rotate: 0,
+      vertical: 1,
+      horizontal: 1,
+      scale: 1,
+    };
+    setImageState(stateData);
+    linkedList.insert(stateData);
   };
 
   const imageCrop = useCallback(() => {
@@ -149,10 +178,11 @@ const Home = () => {
     const stateData = { ...imageState, image: base64Url };
 
     setImageState(stateData);
-    storeData.insert(stateData);
+    const linkedList = getLinkedListForImage(currentIndex);
+    linkedList.insert(stateData);
     // Reset the crop state to hide the crop box
     setCrop(null);
-  }, [crop, details, imageState]);
+  }, [crop, details, imageState, currentIndex]);
 
   // Add useEffect to listen for Enter key
   useEffect(() => {
@@ -168,7 +198,7 @@ const Home = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [crop]);
+  }, [crop, imageCrop]);
 
   // Handle zooming with Alt + Mouse scroll
   useEffect(() => {
@@ -228,6 +258,50 @@ const Home = () => {
     link.click();
   };
 
+  const showNextImage = () => {
+    if (currentIndex < images.length - 1) {
+      const nextIndex = currentIndex + 1;
+      const linkedList = getLinkedListForImage(nextIndex);
+      const stateData = linkedList.current?.data || {
+        image: images[nextIndex],
+        brightness: 100,
+        grayscale: 0,
+        sepia: 0,
+        saturate: 100,
+        contrast: 100,
+        hueRotate: 0,
+        rotate: 0,
+        vertical: 1,
+        horizontal: 1,
+        scale: 1,
+      };
+      setImageState(stateData);
+      setCurrentIndex(nextIndex);
+    }
+  };
+
+  const showPreviousImage = () => {
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1;
+      const linkedList = getLinkedListForImage(prevIndex);
+      const stateData = linkedList.current?.data || {
+        image: images[prevIndex],
+        brightness: 100,
+        grayscale: 0,
+        sepia: 0,
+        saturate: 100,
+        contrast: 100,
+        hueRotate: 0,
+        rotate: 0,
+        vertical: 1,
+        horizontal: 1,
+        scale: 1,
+      };
+      setImageState(stateData);
+      setCurrentIndex(prevIndex);
+    }
+  };
+
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center h-[10vh]">
@@ -268,6 +342,7 @@ const Home = () => {
             id="choose"
             className="hidden"
             type="file"
+            multiple // Allow multiple image selection
           />
         </div>
 
@@ -286,6 +361,7 @@ const Home = () => {
           </button>
         </div>
       </div>
+
       <div className="h-[80vh] flex">
         <div className="w-[10%] h-full">
           <div className="flex gap-4">
@@ -341,6 +417,7 @@ const Home = () => {
             ))}
           </div>
         </div>
+
         <div
           className="h-[80vh] w-full bg-slate-100 flex justify-center overflow-auto" // Enabled scrolling
           style={{ cursor: "grab" }}
@@ -408,6 +485,25 @@ const Home = () => {
             />
           </ConfigProvider>
         </div>
+      </div>
+
+      <div className="w-full h-[10vh] flex items-center justify-center gap-4">
+        {currentIndex > 0 && (
+          <button
+            onClick={showPreviousImage}
+            className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md"
+          >
+            Previous
+          </button>
+        )}
+        {currentIndex < images.length - 1 && (
+          <button
+            onClick={showNextImage}
+            className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md"
+          >
+            Next
+          </button>
+        )}
       </div>
     </div>
   );
