@@ -148,6 +148,8 @@ const Home = () => {
 
     setImageState(stateData);
     storeData.insert(stateData);
+    // Reset the crop state to hide the crop box
+    setCrop(null);
   });
 
   // Add useEffect to listen for Enter key
