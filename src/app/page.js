@@ -173,7 +173,7 @@ const Home = () => {
         canvas.width = crop.width;
         canvas.height = crop.height;
         const ctx = canvas.getContext('2d');
-
+    
         ctx.drawImage(
             details,
             crop.x * scaleX,
@@ -185,13 +185,15 @@ const Home = () => {
             crop.width,
             crop.height
         );
+    
         const base64Url = canvas.toDataURL('image/jpg');
         const stateData = {
             ...imageState,
             image: base64Url,
         };
+    
         setImageState(stateData);
-        storeData.insert(stateData);
+        storeData.insert(stateData); // Insert the new cropped state into the LinkedList history
     };
 
     const saveImage = () => {
