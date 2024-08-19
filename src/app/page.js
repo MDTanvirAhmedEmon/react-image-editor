@@ -8,9 +8,13 @@ import { LiaRedoAltSolid } from "react-icons/lia";
 import { ConfigProvider, Slider, Tooltip } from 'antd';
 import { useState } from "react";
 import Image from "next/image";
-import ReactCrop from 'react-image-crop'
-import 'react-image-crop/dist/ReactCrop.css'
+import ReactCrop from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import storeData from "@/LinkedList";
+// Adjust this import according to your actual file structure
+
+// Initialize the linked list instance
+// const storeData = new LinkedList();
 
 const Home = () => {
 
@@ -59,19 +63,14 @@ const Home = () => {
         horizontal: 1,
     });
 
-    const [crop, setCrop] = useState('')
-    const [details, setDetails] = useState('')
-    console.log('details', details)
+    const [crop, setCrop] = useState('');
+    const [details, setDetails] = useState('');
 
     const imageHandle = (e) => {
         if (e.target.files.length !== 0) {
             const reader = new FileReader();
 
             reader.onload = () => {
-                setImageState({
-                    ...imageState,
-                    image: reader.result
-                });
                 const stateData = {
                     image: reader.result,
                     brightness: 100,
@@ -83,80 +82,84 @@ const Home = () => {
                     rotate: 0,
                     vertical: 1,
                     horizontal: 1,
-                }
-                storeData.insert(stateData)
+                };
+                setImageState(stateData);
+                storeData.insert(stateData);
             };
             reader.readAsDataURL(e.target.files[0]);
         }
     };
 
     const inputHandle = (value) => {
-        setImageState({
+        const newState = {
             ...imageState,
-            [property.name]: value
-        });
+            [property.name]: value,
+        };
+        setImageState(newState);
+        storeData.insert(newState);
     };
 
     const leftRotate = () => {
-        setImageState({
+        const newRotate = imageState.rotate + 90;
+        const stateData = {
             ...imageState,
-            rotate: imageState.rotate + 90
-        });
-        const stateData = imageState
-        stateData.rotate = imageState.rotate -90
-        storeData.insert(stateData)
+            rotate: newRotate,
+        };
+        setImageState(stateData);
+        storeData.insert(stateData);
     };
 
     const rightRotate = () => {
-        setImageState({
+        const newRotate = imageState.rotate - 90;
+        const stateData = {
             ...imageState,
-            rotate: imageState.rotate - 90
-        });
-        const stateData = imageState
-        stateData.rotate = imageState.rotate +90
-        storeData.insert(stateData)
+            rotate: newRotate,
+        };
+        setImageState(stateData);
+        storeData.insert(stateData);
     };
 
     const verticalFlip = () => {
-        setImageState({
+        const newVertical = imageState.vertical === 1 ? -1 : 1;
+        const stateData = {
             ...imageState,
-            vertical: imageState.vertical === 1 ? -1 : 1
-        });
-        const stateData = imageState
-        stateData.rotate = imageState.vertical === 1 ? -1 : 1
-        storeData.insert(stateData)
+            vertical: newVertical,
+        };
+        setImageState(stateData);
+        storeData.insert(stateData);
     };
 
     const horizontalFlip = () => {
-        setImageState({
+        const newHorizontal = imageState.horizontal === 1 ? -1 : 1;
+        const stateData = {
             ...imageState,
-            horizontal: imageState.horizontal === 1 ? -1 : 1
-        });
-        const stateData = imageState
-        stateData.rotate = imageState.horizontal === 1 ? -1 : 1
-        storeData.insert(stateData)
+            horizontal: newHorizontal,
+        };
+        setImageState(stateData);
+        storeData.insert(stateData);
     };
 
-    const redo =() => {
-        const data = storeData.redoEdit()
-        if(data){
-            setImageState(data)
+    const redo = () => {
+        const data = storeData.redoEdit();
+        if (data) {
+            setImageState(data);
         }
     };
-    const undo =() => {
-        const data = storeData.undoEdit()
-        if(data){
-            setImageState(data)
+
+    const undo = () => {
+        const data = storeData.undoEdit();
+        if (data) {
+            setImageState(data);
         }
     };
 
     const imageCrop = () => {
-        const canvas = document.createElement('canvas')
-        const scaleX = details.naturalWidth / details.width
-        const scaleY = details.naturalHeight / details.height
-        canvas.width = crop.width
-        canvas.height = crop.height
-        const ctx = canvas.getContext('2d')
+        const canvas = document.createElement('canvas');
+        const scaleX = details.naturalWidth / details.width;
+        const scaleY = details.naturalHeight / details.height;
+        canvas.width = crop.width;
+        canvas.height = crop.height;
+        const ctx = canvas.getContext('2d');
 
         ctx.drawImage(
             details,
@@ -168,19 +171,21 @@ const Home = () => {
             0,
             crop.width,
             crop.height
-        )
-        const base64Url = canvas.toDataURL('image/jpg')
-        setImageState({
+        );
+        const base64Url = canvas.toDataURL('image/jpg');
+        const stateData = {
             ...imageState,
-            image: base64Url
-        })
+            image: base64Url,
+        };
+        setImageState(stateData);
+        storeData.insert(stateData);
     };
 
     const saveImage = () => {
-        const canvas = document.createElement('canvas')
-        canvas.width = details.naturalWidth
-        canvas.height = details.naturalHeight
-        const ctx = canvas.getContext('2d')
+        const canvas = document.createElement('canvas');
+        canvas.width = details.naturalWidth;
+        canvas.height = details.naturalHeight;
+        const ctx = canvas.getContext('2d');
 
         ctx.filter = `
         brightness(${imageState.brightness}%) 
@@ -189,10 +194,10 @@ const Home = () => {
         saturate(${imageState.saturate}%) 
         contrast(${imageState.contrast}%) 
         hue-rotate(${imageState.hueRotate}deg)
-        `
-        ctx.translate(canvas.width / 2, canvas.height / 2)
-        ctx.rotate(imageState.rotate * Math.PI / 180)
-        ctx.scale(imageState.vertical, imageState.horizontal)
+        `;
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(imageState.rotate * Math.PI / 180);
+        ctx.scale(imageState.vertical, imageState.horizontal);
 
         ctx.drawImage(
             details,
@@ -202,11 +207,10 @@ const Home = () => {
             canvas.height
         );
 
-        const link = document.createElement('a')
-        link.download = 'image_edit.jpg'
-        link.href = canvas.toDataURL()
-        link.click()
-
+        const link = document.createElement('a');
+        link.download = Date.now() + "-" + 'image_edit.jpg';
+        link.href = canvas.toDataURL();
+        link.click();
     };
 
     return (
@@ -214,22 +218,29 @@ const Home = () => {
             <div className="flex justify-between items-center h-[10vh]">
                 <div className="flex items-center gap-4">
                     <Tooltip title="Undo" placement="leftTop">
-                        <button className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md">
-                            <BiUndo onClick={undo} className="w-6 h-6" />
+                        <button
+                            className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md"
+                            onClick={undo}
+                        >
+                            <BiUndo className="w-6 h-6" />
                         </button>
                     </Tooltip>
                     <Tooltip title="Redo" placement="bottomRight">
-                        <button className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md">
-                            <BiRedo onClick={redo} className="w-6 h-6" />
+                        <button
+                            className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md"
+                            onClick={redo}
+                        >
+                            <BiRedo className="w-6 h-6" />
                         </button>
                     </Tooltip>
-                    {
-                        crop &&
-                        <button onClick={imageCrop} className="text-white bg-[#3C3D37] py-2 px-4 rounded-sm shadow-md">
+                    {crop && (
+                        <button
+                            onClick={imageCrop}
+                            className="text-white bg-[#3C3D37] py-2 px-4 rounded-sm shadow-md"
+                        >
                             Crop Image
                         </button>
-
-                    }
+                    )}
 
                     <label
                         htmlFor="choose"
@@ -244,7 +255,10 @@ const Home = () => {
                     <button className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md">
                         Reset
                     </button>
-                    <button onClick={saveImage} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                    <button
+                        onClick={saveImage}
+                        className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md"
+                    >
                         Save Image
                     </button>
                 </div>
@@ -254,24 +268,36 @@ const Home = () => {
                 <div className="w-[10%] h-full">
                     <div className="flex gap-4">
                         <Tooltip title="Horizontal Flip" placement="leftTop">
-                            <button onClick={horizontalFlip} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                            <button
+                                onClick={horizontalFlip}
+                                className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md"
+                            >
                                 <LuFlipHorizontal2 className="w-6 h-6" />
                             </button>
                         </Tooltip>
                         <Tooltip title="Vertical Flip" placement="rightTop">
-                            <button onClick={verticalFlip} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                            <button
+                                onClick={verticalFlip}
+                                className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md"
+                            >
                                 <LuFlipVertical2 className="w-6 h-6" />
                             </button>
                         </Tooltip>
                     </div>
                     <div className="flex gap-4 mt-3">
                         <Tooltip title="Left Rotate" placement="leftTop">
-                            <button onClick={leftRotate} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                            <button
+                                onClick={leftRotate}
+                                className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md"
+                            >
                                 <LiaUndoAltSolid className="w-6 h-6" />
                             </button>
                         </Tooltip>
                         <Tooltip title="Right Rotate" placement="rightTop">
-                            <button onClick={rightRotate} className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md">
+                            <button
+                                onClick={rightRotate}
+                                className="text-black bg-[#ECDFCC] py-2 px-4 rounded-sm shadow-md"
+                            >
                                 <LiaRedoAltSolid className="w-6 h-6" />
                             </button>
                         </Tooltip>
@@ -282,7 +308,10 @@ const Home = () => {
                             <button
                                 key={index}
                                 onClick={() => setProperty(item)}
-                                className={`w-[128px] ${property.name === item.name ? `bg-[#697565] text-white` : `text-black bg-[#ECDFCC]`} py-2 px-4 rounded-sm capitalize shadow-md`}
+                                className={`w-[128px] ${property.name === item.name
+                                    ? `bg-[#697565] text-white`
+                                    : `text-black bg-[#ECDFCC]`
+                                    } py-2 px-4 rounded-sm capitalize shadow-md`}
                             >
                                 {item?.name}
                             </button>
@@ -292,7 +321,7 @@ const Home = () => {
 
                 <div className="w-[90%] bg-slate-100 flex items-center justify-center overflow-hidden">
                     {imageState.image && (
-                        <ReactCrop crop={crop} onChange={c => setCrop(c)}>
+                        <ReactCrop crop={crop} onChange={(c) => setCrop(c)}>
                             <Image
                                 onLoad={(e) => setDetails(e.currentTarget)}
                                 style={{
@@ -307,7 +336,7 @@ const Home = () => {
                                     transform: `
                                     rotate(${imageState.rotate}deg) 
                                     scale(${imageState.horizontal}, ${imageState.vertical})
-                                `
+                                `,
                                 }}
                                 className="w-auto"
                                 src={imageState.image}
@@ -316,7 +345,6 @@ const Home = () => {
                                 alt="img"
                             />
                         </ReactCrop>
-
                     )}
                 </div>
             </div>
