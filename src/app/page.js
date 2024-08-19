@@ -10,11 +10,7 @@ import { useState } from "react";
 import Image from "next/image";
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import LinkedList from "@/LinkedList"; // Adjust this import according to your actual file structure
 import storeData from "@/LinkedList";
-
-// Initialize the linked list instance
-
 
 const Home = () => {
 
@@ -45,7 +41,12 @@ const Home = () => {
         },
     ];
 
-    const initialImageState = {
+    const [property, setProperty] = useState({
+        name: "brightness",
+        maxValue: 200,
+    });
+
+    const [imageState, setImageState] = useState({
         image: '',
         brightness: 100,
         grayscale: 0,
@@ -56,11 +57,7 @@ const Home = () => {
         rotate: 0,
         vertical: 1,
         horizontal: 1,
-    };
-
-    const [property, setProperty] = useState(filtersItem[0]);
-
-    const [imageState, setImageState] = useState(initialImageState);
+    });
 
     const [crop, setCrop] = useState('');
     const [details, setDetails] = useState('');
@@ -71,8 +68,16 @@ const Home = () => {
 
             reader.onload = () => {
                 const stateData = {
-                    ...initialImageState,
                     image: reader.result,
+                    brightness: 100,
+                    grayscale: 0,
+                    sepia: 0,
+                    saturate: 100,
+                    contrast: 100,
+                    hueRotate: 0,
+                    rotate: 0,
+                    vertical: 1,
+                    horizontal: 1,
                 };
                 setImageState(stateData);
                 storeData.insert(stateData);
@@ -144,6 +149,23 @@ const Home = () => {
         }
     };
 
+    const resetImage = () => {
+        const initialState = {
+            image: imageState.image,
+            brightness: 100,
+            grayscale: 0,
+            sepia: 0,
+            saturate: 100,
+            contrast: 100,
+            hueRotate: 0,
+            rotate: 0,
+            vertical: 1,
+            horizontal: 1,
+        };
+        setImageState(initialState);
+        storeData.insert(initialState);
+    };
+
     const imageCrop = () => {
         const canvas = document.createElement('canvas');
         const scaleX = details.naturalWidth / details.width;
@@ -199,14 +221,9 @@ const Home = () => {
         );
 
         const link = document.createElement('a');
-        link.download = 'image_edit.jpg';
+        link.download = Date.now() + "-" + 'image_edit.jpg';
         link.href = canvas.toDataURL();
         link.click();
-    };
-
-    const resetImage = () => {
-        setImageState(initialImageState);
-        storeData.insert(initialImageState);
     };
 
     return (
@@ -248,10 +265,7 @@ const Home = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={resetImage}
-                        className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md"
-                    >
+                    <button onClick={resetImage} className="text-white bg-[#1E201E] py-2 px-4 rounded-sm shadow-md">
                         Reset
                     </button>
                     <button
@@ -308,8 +322,8 @@ const Home = () => {
                                 key={index}
                                 onClick={() => setProperty(item)}
                                 className={`w-[128px] ${property.name === item.name
-                                        ? `bg-[#697565] text-white`
-                                        : `text-black bg-[#ECDFCC]`
+                                    ? `bg-[#697565] text-white`
+                                    : `text-black bg-[#ECDFCC]`
                                     } py-2 px-4 rounded-sm capitalize shadow-md`}
                             >
                                 {item?.name}
