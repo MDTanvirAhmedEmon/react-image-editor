@@ -38,6 +38,7 @@ const Home = () => {
     rotate: 0,
     vertical: 1,
     horizontal: 1,
+    scale: 1, // Added scale for zooming
   });
 
   const [originalImageState, setOriginalImageState] = useState(null);
@@ -167,6 +168,24 @@ const Home = () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [crop, imageState]); // Dependency array to re-apply effect when crop or imageState changes
+  useEffect(() => {
+    const handleWheel = (event) => {
+      if (event.altKey) {
+        event.preventDefault();
+        const newScale = imageState.scale + (event.deltaY < 0 ? 0.1 : -0.1);
+        setImageState((prevState) => ({
+          ...prevState,
+          scale: Math.min(Math.max(newScale, 0.1), 5), // Limit zoom between 0.1x and 5x
+        }));
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel);
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [imageState.scale]);
 
   const saveImage = () => {
     const canvas = document.createElement("canvas");
@@ -315,13 +334,23 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="w-[90%] bg-slate-100 flex items-center justify-center overflow-hidden">
-          {imageState.image && (
-            <ReactCrop crop={crop} onChange={(c) => setCrop(c)}>
-              <Image
-                onLoad={(e) => setDetails(e.currentTarget)}
-                style={{
-                  filter: `
+        <div
+          className="h-[80vh] w-full bg-slate-100 flex justify-center overflow-auto" // Enabled scrolling
+          style={{ cursor: "grab" }}
+        >
+          <div
+            className="flex justify-center items-center"
+            style={{
+              transform: `scale(${imageState.scale})`, // Applied scaling
+              transformOrigin: "center", // Scale from the center
+            }}
+          >
+            {imageState.image && (
+              <ReactCrop crop={crop} onChange={(c) => setCrop(c)}>
+                <Image
+                  onLoad={(e) => setDetails(e.currentTarget)}
+                  style={{
+                    filter: `
                                     brightness(${imageState.brightness}%) 
                                     grayscale(${imageState.grayscale}%) 
                                     sepia(${imageState.sepia}%) 
@@ -329,19 +358,20 @@ const Home = () => {
                                     contrast(${imageState.contrast}%) 
                                     hue-rotate(${imageState.hueRotate}deg)
                                 `,
-                  transform: `
+                    transform: `
                                     rotate(${imageState.rotate}deg) 
                                     scale(${imageState.horizontal}, ${imageState.vertical})
                                 `,
-                }}
-                className="w-auto"
-                src={imageState.image}
-                width={0}
-                height={0}
-                alt="img"
-              />
-            </ReactCrop>
-          )}
+                  }}
+                  className="w-auto"
+                  src={imageState.image}
+                  width={0}
+                  height={0}
+                  alt="img"
+                />
+              </ReactCrop>
+            )}
+          </div>
         </div>
       </div>
 
